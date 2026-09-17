@@ -1,0 +1,120 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: var(--font-display, "Fraunces", Georgia, serif);
+  --font-body: var(--font-body, "IBM Plex Sans", system-ui, sans-serif);
+  --font-mono: var(--font-mono, "IBM Plex Mono", ui-monospace, monospace);
+}
+
+html {
+  color-scheme: light;
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+html.dark { color-scheme: dark; }
+
+body {
+  @apply bg-paper text-ink font-body antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  background-image: linear-gradient(#D9CFAE26 1px, transparent 1px),
+                    linear-gradient(90deg, #D9CFAE26 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+html.dark body {
+  @apply bg-night text-ink-onnight;
+  background-image: linear-gradient(#1E253526 1px, transparent 1px),
+                    linear-gradient(90deg, #1E253526 1px, transparent 1px);
+}
+
+/* ── Tabular figures ─────────────────────────────── */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* ── Surface (Glassmorphic) ───────────────────────── */
+.surface {
+  @apply bg-paper-raised/95 dark:bg-night-raised/90 border border-hairline dark:border-hairline-night rounded-lg backdrop-blur-md;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 0 rgba(255,255,255,0.7) inset;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+html.dark .surface {
+  box-shadow: 0 1px 4px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.03) inset;
+}
+.surface:hover {
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08), 0 1px 0 rgba(255,255,255,0.8) inset;
+}
+html.dark .surface:hover {
+  box-shadow: 0 6px 20px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.05) inset;
+}
+
+.surface-interactive {
+  @apply surface cursor-pointer;
+}
+.surface-interactive:hover {
+  transform: translateY(-2px);
+  border-color: theme("colors.amber.DEFAULT");
+}
+html.dark .surface-interactive:hover {
+  border-color: theme("colors.amber.bright");
+}
+
+/* ── Flap numeral (split-flap style) ─────────────── */
+.flap {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.01em;
+}
+
+/* ── Skeleton shimmer ────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, #E8DFCA 25%, #F5EDDA 50%, #E8DFCA 75%);
+  background-size: 400px 100%;
+  animation: shimmer 1.6s infinite linear;
+}
+html.dark .skeleton {
+  background: linear-gradient(90deg, #1E2535 25%, #161B25 50%, #1E2535 75%);
+}
+
+/* ── Focus ───────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid theme("colors.amber.DEFAULT");
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+html.dark :focus-visible { outline-color: theme("colors.amber.bright"); }
+
+/* ── Selection ───────────────────────────────────── */
+::selection {
+  background-color: theme("colors.amber.DEFAULT");
+  color: #fff;
+}
+
+/* ── Scrollbar ───────────────────────────────────── */
+::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: #D9CFAE;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #C4B896;
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: #2A3347;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #3A4660;
+}
+
+/* ── Reduced motion ─────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
