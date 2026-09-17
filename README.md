@@ -70,8 +70,8 @@ Built with **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS**, **Ligh
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/your-username/currency-app.git
-   cd currency-app
+   git clone https://PS D:\Programming\CURRENCY.git
+   cd CURRENCY
    ```
 
 2. **Install dependencies**:
