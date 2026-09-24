@@ -42,10 +42,15 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       ).slice(0, 7)
     : ALL.slice(0, 7);
 
-  useEffect(() => { setIdx(0); }, [query]);
-
   useEffect(() => {
-    if (open) { setTimeout(() => inputRef.current?.focus(), 50); setQuery(""); }
+    if (open) {
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+        setQuery("");
+        setIdx(0);
+      }, 50);
+      return () => clearTimeout(timer);
+    }
   }, [open]);
 
   useEffect(() => {
@@ -84,7 +89,10 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
               <input
                 ref={inputRef}
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setIdx(0);
+                }}
                 placeholder="Search currencies & crypto..."
                 className="flex-1 bg-transparent font-body text-sm outline-none placeholder:text-ink-muted dark:placeholder:text-ink-onnightMuted"
               />

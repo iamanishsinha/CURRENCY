@@ -1,5 +1,5 @@
-﻿"use client";
-import { useEffect, useState, useCallback } from "react";
+"use client";
+import { useSyncExternalStore, useCallback } from "react";
 
 export interface WatchlistItem {
   id: string;
@@ -9,29 +9,38 @@ export interface WatchlistItem {
 const STORAGE_KEY = "currency-watchlist";
 const EVENT_NAME = "currency-watchlist-change";
 
-export function useWatchlist() {
-  const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
+let cachedRaw: string | null = null;
+let cachedParsed: WatchlistItem[] = [];
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) setWatchlist(JSON.parse(stored));
-    } catch {
-      // ignore
+function getSnapshot(): WatchlistItem[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw !== cachedRaw) {
+      cachedRaw = raw;
+      cachedParsed = raw ? JSON.parse(raw) : [];
     }
+    return cachedParsed;
+  } catch {
+    return [];
+  }
+}
 
-    const handler = () => {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) setWatchlist(JSON.parse(stored));
-      } catch {
-        // ignore
-      }
-    };
+function getServerSnapshot(): WatchlistItem[] {
+  return [];
+}
 
-    window.addEventListener(EVENT_NAME, handler);
-    return () => window.removeEventListener(EVENT_NAME, handler);
-  }, []);
+function subscribe(callback: () => void) {
+  window.addEventListener(EVENT_NAME, callback);
+  window.addEventListener("storage", callback);
+  return () => {
+    window.removeEventListener(EVENT_NAME, callback);
+    window.removeEventListener("storage", callback);
+  };
+}
+
+export function useWatchlist() {
+  const watchlist = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   const isWatched = useCallback(
     (id: string, type: "fiat" | "crypto") => {
@@ -44,24 +53,22 @@ export function useWatchlist() {
 
   const toggle = useCallback(
     (id: string, type: "fiat" | "crypto") => {
-      setWatchlist((prev) => {
-        const exists = prev.some(
-          (item) => item.id.toLowerCase() === id.toLowerCase() && item.type === type
-        );
-        const next = exists
-          ? prev.filter(
-              (item) => !(item.id.toLowerCase() === id.toLowerCase() && item.type === type)
-            )
-          : [...prev, { id, type }];
+      const current = getSnapshot();
+      const exists = current.some(
+        (item) => item.id.toLowerCase() === id.toLowerCase() && item.type === type
+      );
+      const next = exists
+        ? current.filter(
+            (item) => !(item.id.toLowerCase() === id.toLowerCase() && item.type === type)
+          )
+        : [...current, { id, type }];
 
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-          window.dispatchEvent(new Event(EVENT_NAME));
-        } catch {
-          // ignore
-        }
-        return next;
-      });
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        window.dispatchEvent(new Event(EVENT_NAME));
+      } catch {
+        // ignore
+      }
     },
     []
   );

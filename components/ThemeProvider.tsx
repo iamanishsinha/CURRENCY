@@ -1,6 +1,5 @@
 "use client";
-
-import { createContext, useContext, useLayoutEffect, useState } from "react";
+import { createContext, useContext, useSyncExternalStore, useCallback } from "react";
 import { LazyMotion, domAnimation } from "framer-motion";
 
 type Theme = "light" | "dark";
@@ -12,33 +11,46 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light");
-
-  useLayoutEffect(() => {
-    let stored: Theme | null = null;
-    try {
-      stored = window.localStorage.getItem("currency-theme") as Theme | null;
-    } catch {
-      // localStorage unavailable
-    }
-    const initial = stored ?? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-    setTheme(initial);
-    document.documentElement.classList.toggle("dark", initial === "dark");
-  }, []);
-
-  const toggle = () => {
-    setTheme((prev) => {
-      const next = prev === "light" ? "dark" : "light";
-      try {
-        window.localStorage.setItem("currency-theme", next);
-      } catch {
-        // Session-only
-      }
-      document.documentElement.classList.toggle("dark", next === "dark");
-      return next;
-    });
+function subscribeTheme(callback: () => void) {
+  const handler = (e: StorageEvent) => {
+    if (e.key === "currency-theme") callback();
   };
+  window.addEventListener("storage", handler);
+  window.addEventListener("currency-theme-change", callback);
+  return () => {
+    window.removeEventListener("storage", handler);
+    window.removeEventListener("currency-theme-change", callback);
+  };
+}
+
+function getThemeSnapshot(): Theme {
+  if (typeof window === "undefined") return "light";
+  try {
+    const stored = window.localStorage.getItem("currency-theme") as Theme | null;
+    if (stored === "dark" || stored === "light") return stored;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  } catch {
+    return "light";
+  }
+}
+
+function getThemeServerSnapshot(): Theme {
+  return "light";
+}
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const theme = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getThemeServerSnapshot);
+
+  const toggle = useCallback(() => {
+    const next: Theme = theme === "light" ? "dark" : "light";
+    try {
+      window.localStorage.setItem("currency-theme", next);
+      window.dispatchEvent(new Event("currency-theme-change"));
+    } catch {
+      // Session-only
+    }
+    document.documentElement.classList.toggle("dark", next === "dark");
+  }, [theme]);
 
   return (
     <ThemeContext.Provider value={{ theme, toggle }}>
@@ -49,8 +61,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+const DEFAULT_THEME: ThemeContextValue = { theme: "light", toggle: () => {} };
+
 export function useTheme(): ThemeContextValue {
   const ctx = useContext(ThemeContext);
-  if (!ctx) throw new Error("useTheme must be used within ThemeProvider");
-  return ctx;
+  // During SSR / pre-render ThemeProvider hasn't mounted yet — return a safe default.
+  return ctx ?? DEFAULT_THEME;
 }

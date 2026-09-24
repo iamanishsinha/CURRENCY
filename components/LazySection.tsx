@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import React, { useEffect, useRef, useState } from "react";
 
 interface LazySectionProps {
@@ -14,14 +14,13 @@ export function LazySection({
   rootMargin = "250px",
   className = ""
 }: LazySectionProps) {
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(() => {
+    return typeof window !== "undefined" && typeof IntersectionObserver === "undefined";
+  });
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (typeof IntersectionObserver === "undefined") {
-      setIsVisible(true);
-      return;
-    }
+    if (typeof IntersectionObserver === "undefined") return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {

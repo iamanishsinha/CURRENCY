@@ -33,39 +33,34 @@ export const metadata: Metadata = {
   description: "Global currency and crypto intelligence: convert, compare, and analyze exchange rates with real-time data."
 };
 
+// Prevent theme flash before React hydrates
 const NO_FLASH = `(function(){try{var s=localStorage.getItem('currency-theme');var d=s?s==='dark':matchMedia('(prefers-color-scheme: dark)').matches;if(d)document.documentElement.classList.add('dark')}catch(e){}})();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable}`}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${fraunces.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable}`}
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: NO_FLASH }} />
       </head>
+
       <body>
-        <ProgressBar />
         <ThemeProvider>
-          <div className="flex min-h-screen flex-col">
-            <Header />
-            <TickerTape />
-            <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
-              <PageTransition>{children}</PageTransition>
-            </main>
-            <footer className="border-t border-hairline dark:border-hairline-night px-6 py-5">
-              <div className="mx-auto max-w-6xl flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="font-display text-base font-semibold tracking-tight">
-                    CU<span className="text-amber dark:text-amber-bright">₹₹€</span>NC<span className="text-amber dark:text-amber-bright">¥</span>
-                  </span>
-                  <span className="text-xs text-ink-muted dark:text-ink-onnightMuted font-mono">·</span>
-                  <span className="text-xs text-ink-muted dark:text-ink-onnightMuted font-mono">FX: Frankfurter (ECB) · Crypto: CoinGecko</span>
-                </div>
-                <span className="text-xs text-ink-muted dark:text-ink-onnightMuted font-mono">Informational only — not investment advice.</span>
-              </div>
-            </footer>
-          </div>
+          <ProgressBar />
+          <Header />
+          <TickerTape />
+          <main className="mx-auto max-w-6xl px-4 sm:px-6 py-8">
+            <PageTransition>
+              {children}
+            </PageTransition>
+          </main>
           <Toast />
         </ThemeProvider>
       </body>
     </html>
   );
 }
+

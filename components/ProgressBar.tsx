@@ -8,13 +8,18 @@ function ProgressBarInner() {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    // Reset and complete animation on path change
-    setProgress(100);
+    // Complete animation on path change
+    const frame = requestAnimationFrame(() => {
+      setProgress(100);
+    });
     const timer = setTimeout(() => {
       setLoading(false);
       setProgress(0);
     }, 250);
-    return () => clearTimeout(timer);
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(timer);
+    };
   }, [pathname]);
 
   useEffect(() => {

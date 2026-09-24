@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useEffect, useState, useMemo } from "react";
 import { HistoricalSeries } from "@/lib/providers/types";
 import { PriceChart } from "./PriceChart";
@@ -21,20 +21,18 @@ export function ConversionTimeline({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const url =
+    fromType === "fiat" && toType === "fiat"
+      ? `/api/rates/historical?base=${from}&symbol=${to}&days=365`
+      : fromType === "crypto"
+      ? `/api/crypto/historical?id=${from}&days=365`
+      : null;
+
+  const activeData = url ? data : null;
+
   useEffect(() => {
     let cancelled = false;
-    // We only fetch historical timeline if at least one leg is queryable
-    const url =
-      fromType === "fiat" && toType === "fiat"
-        ? `/api/rates/historical?base=${from}&symbol=${to}&days=365`
-        : fromType === "crypto"
-        ? `/api/crypto/historical?id=${from}&days=365`
-        : null;
-
-    if (!url) {
-      setData(null);
-      return;
-    }
+    if (!url) return;
 
     setLoading(true);
     setError(null);
@@ -56,9 +54,9 @@ export function ConversionTimeline({
     return () => {
       cancelled = true;
     };
-  }, [fromType, from, toType, to]);
+  }, [url]);
 
-  if (!data && !loading) return null;
+  if (!activeData && !loading) return null;
 
   return (
     <div className="surface p-4 mt-2">
@@ -67,12 +65,12 @@ export function ConversionTimeline({
           1-Year Rate History: {from} → {to}
         </span>
       </div>
-      {loading && !data ? (
+      {loading && !activeData ? (
         <LoadingRows count={3} />
       ) : error ? (
         <span className="text-xs text-loss dark:text-loss-bright font-mono">{error}</span>
-      ) : data ? (
-        <PriceChart points={data.points} isCrypto={fromType === "crypto"} />
+      ) : activeData ? (
+        <PriceChart points={activeData.points} isCrypto={fromType === "crypto"} />
       ) : null}
     </div>
   );

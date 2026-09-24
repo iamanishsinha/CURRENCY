@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
-  eslint: { ignoreDuringBuilds: false }
+  allowedDevOrigins: ['10.58.19.210'],
 };
 
 module.exports = nextConfig;

@@ -58,14 +58,21 @@ export function Converter({ initialFromType = "fiat", initialFrom = "USD", initi
   const [error, setError] = useState<string | null>(null);
   const [showTimeline, setShowTimeline] = useState(false);
 
+  const parsed = Number(amount);
+  const isInvalid = !Number.isFinite(parsed) || parsed < 0;
+  const isSame = from === to && fromType === toType;
+  const currentResult = isInvalid || isSame ? null : result;
+
   useEffect(() => {
-    const parsed = Number(amount);
-    if (!Number.isFinite(parsed) || parsed < 0 || from === to) { setResult(null); return; }
+    const p = Number(amount);
+    if (!Number.isFinite(p) || p < 0 || (from === to && fromType === toType)) {
+      return;
+    }
     const controller = new AbortController();
     setLoading(true);
     setError(null);
     const path = historical ? "/api/convert/historical" : "/api/convert";
-    const body: Record<string, unknown> = { fromType, from, toType, to, amount: parsed };
+    const body: Record<string, unknown> = { fromType, from, toType, to, amount: p };
     if (historical) body.date = date;
     fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: controller.signal })
       .then(async (res) => { const json = await res.json(); if (!res.ok) throw new Error(json.error ?? "Failed"); setResult(json.data); })
@@ -77,8 +84,8 @@ export function Converter({ initialFromType = "fiat", initialFrom = "USD", initi
   const swap = () => { setFromType(toType); setToType(fromType); setFrom(to); setTo(from); };
 
   const copyRate = () => {
-    if (!result) return;
-    const text = `1 ${labelFor(fromType, from)} = ${formatRate(result.rate)} ${labelFor(toType, to)} (${result.date})`;
+    if (!currentResult) return;
+    const text = `1 ${labelFor(fromType, from)} = ${formatRate(currentResult.rate)} ${labelFor(toType, to)} (${currentResult.date})`;
     navigator.clipboard.writeText(text).catch(() => {});
     toast.gain("Rate copied to clipboard!");
   };
@@ -137,18 +144,18 @@ export function Converter({ initialFromType = "fiat", initialFrom = "USD", initi
               </m.div>
             ) : error ? (
               <m.p key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-loss dark:text-loss-bright">⚠ {error}</m.p>
-            ) : result ? (
+            ) : currentResult ? (
               <m.div key="result" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
                 <div className="flap text-4xl font-bold">
-                  <AnimatedNumber value={result.result} formatFn={formatPrice} />
+                  <AnimatedNumber value={currentResult.result} formatFn={formatPrice} />
                   <span className="text-base font-normal ml-2 text-ink-soft dark:text-ink-onnightSoft">{labelFor(toType, to)}</span>
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-3">
                   <span className="font-mono text-xs text-ink-soft dark:text-ink-onnightSoft">
-                    1 {labelFor(fromType, from)} = {formatRate(result.rate)} {labelFor(toType, to)}
+                    1 {labelFor(fromType, from)} = {formatRate(currentResult.rate)} {labelFor(toType, to)}
                   </span>
                   <span className="font-mono text-[10px] text-ink-muted dark:text-ink-onnightMuted">
-                    {result.isHistorical ? `Rate on ${result.date}` : `Rate as of ${result.date}`}
+                    {currentResult.isHistorical ? `Rate on ${currentResult.date}` : `Rate as of ${currentResult.date}`}
                   </span>
                   <button onClick={copyRate} title="Copy rate to clipboard"
                     className="font-mono text-[10px] text-amber dark:text-amber-bright hover:underline">
@@ -161,7 +168,7 @@ export function Converter({ initialFromType = "fiat", initialFrom = "USD", initi
                     {showTimeline ? "Hide timeline" : "Show 1-year history"}
                   </button>
                 </div>
-                {result.note && <p className="mt-2 font-mono text-[11px] text-ink-muted dark:text-ink-onnightMuted">{result.note}</p>}
+                {currentResult.note && <p className="mt-2 font-mono text-[11px] text-ink-muted dark:text-ink-onnightMuted">{currentResult.note}</p>}
               </m.div>
             ) : null}
           </AnimatePresence>
